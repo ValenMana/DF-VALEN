@@ -1,21 +1,71 @@
 #include <Wire.h>
 #include <MPU6050.h>
 #include <FastLED.h>
+#include <LiquidCrystal_I2C.h>
+#include <SPI.h>
+#include <MFRC522.h>
 
 #define NUM_LEDS 29
+#define NUM_LEDS_TOTEM 7
+
 #define LED_PIN 25  //7
+#define LED_PIN_TOTEM 26
+
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
+
+byte bloqueLleno[8] = {
+  B11111,
+  B11111,
+  B11111,
+  B11111,
+  B11111,
+  B11111,
+  B11111,
+  B11111
+};
+
+#define SS_PIN 5
+#define RST_PIN 13
+
+MFRC522 rfid(SS_PIN, RST_PIN);  // Instance of the class
+
+MFRC522::MIFARE_Key key;
+
+// Init array that will store new NUID
+byte nuidPICC[4];
+
+// Variable to store the scanned card ID as a string
+String cardID = "";
 
 CRGB leds[NUM_LEDS];
+CRGB totem[NUM_LEDS_TOTEM];
 
-MPU6050 mpu;
+
+MPU6050 mpu(0x68);
 
 float umbralImpacto = 1.5;  // Ajustá esto para cambiar sensibilidad (en g)
 float baseAccZ = 0;
 
 void setup() {
   Serial.begin(115200);
-  Wire.begin();
-  FastLED.addLeds<WS2811, LED_PIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+  Wire.begin(21, 22);  // SDA = GPIO21, SCL = GPIO22 en ESP32
+  FastLED.addLeds<WS2811, LED_PIN, BRG>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+
+  FastLED.addLeds<WS2812, LED_PIN_TOTEM, BRG>(totem, NUM_LEDS_TOTEM).setCorrection(TypicalLEDStrip);
+
+  SPI.begin();      // Init SPI bus
+  rfid.PCD_Init();  // Init
+  lcd.init();
+
+  lcd.createChar(0, bloqueLleno);
+
+  for (int row = 0; row < 2; row++) {
+    lcd.setCursor(5, row);  // columna 5, fila 0 y 1
+    for (int col = 0; col < 4; col++) {
+      lcd.write(byte(0));  // imprimir bloque lleno
+    }
+  }
 
   mpu.initialize();
 
@@ -42,21 +92,41 @@ void setup() {
 
   Serial.println("Sensor listo.");
 
+  lcd.backlight();
+  lcd.clear();
 
+  setGreen();
   encenderLedsRojo(29);  // Modo espera
 }
 
 int data;
-int prom;
-int estado = 1;  //0
+int prom = 0;
+int estado = 0;
 
 void loop() {
   //espera();
 
+  //fill_rainbow(totem, NUM_LEDS_TOTEM, millis() / 10);
+  //FastLED.show();
+  //delay(20);
+
   switch (estado) {
     case 0:
-
+      lcd.setCursor(3, 0);
+      lcd.print("DESAFIO");
+      lcd.setCursor(5, 1);
+      lcd.print("POTENCIA !");
       stby_led();
+      if (rfid.PICC_IsNewCardPresent()) {
+        //Serial.println("Tarjeta detectada.");
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("     PEGALE");
+        lcd.setCursor(0, 1);
+        lcd.print("     FUERTE !");
+        setYellow();
+        estado = 1;
+      }
       break;
 
     case 1:
@@ -76,7 +146,7 @@ void loop() {
 
         prom += data;
 
-        estado = 1;  //3
+        estado = 3;
       }
       break;
 
@@ -85,7 +155,7 @@ void loop() {
       if (data != -1) {
 
         prom += data;
-
+        setRed();
         estado = 4;
       }
       break;
@@ -94,9 +164,23 @@ void loop() {
       prom /= 3;
       Serial.println(prom);
       encenderLedsRojo(29);  // Modo espera
+      lcd.clear();
+      lcd.setCursor(1, 0);
+      lcd.print("Puntos: ");
+      lcd.print(prom);
+      lcd.print("/16");
+      lcd.setCursor(0, 1);
+      for (int i = 0; i < prom; i++) {
+        lcd.write(byte(255));  // 255 = carácter de bloque lleno (█)
+        delay(60);            // Simular animación de carga
+      }
 
+      delay(6000);
+      lcd.clear();
       prom = 0;
       estado = 0;
+      setGreen();
+
 
 
       break;
@@ -230,4 +314,19 @@ void stby_led() {
       direccion = -direccion;
     }
   }
+}
+
+void setGreen() {
+  fill_solid(totem, NUM_LEDS_TOTEM, CRGB(0, 0, 255));
+  FastLED.show();
+}
+
+void setRed() {
+  fill_solid(totem, NUM_LEDS_TOTEM, CRGB(255, 0, 0));
+  FastLED.show();
+}
+
+void setYellow() {
+  fill_solid(totem, NUM_LEDS_TOTEM, CRGB(255, 0, 255));
+  FastLED.show();
 }
