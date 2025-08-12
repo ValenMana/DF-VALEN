@@ -63,7 +63,7 @@ unsigned int flags[SONAR_NUM];
 
 int medicion;
 
-int estado = 1; //-1
+int estado = -1; 
 int z = 1;
 
 int puntaje = 0;
