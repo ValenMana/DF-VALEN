@@ -32,6 +32,7 @@ void loop() {
       if (millis() - anterior > 500) {
         anterior = millis();
         puntaje += 1;
+
         Serial.println(puntaje);
       }
       break;

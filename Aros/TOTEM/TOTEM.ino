@@ -19,8 +19,6 @@ Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 
-TwoWire I2C_MEGA = TwoWire(1);  // Bus 0 con pines personalizados
-
 #define SS_PIN 5
 #define RST_PIN 13
 
@@ -48,7 +46,7 @@ void setup() {
   lcd.init();
   pixels.begin();  // INITIALIZE NeoPixel strip object (REQUIRED)
 
-  I2C_MEGA.begin(25, 26);  // SDA, SCL personalizados
+  Wire1.begin(25, 26, 100000);  // SDA=21, SCL=22
 
   // Print a message to the LCD.
   lcd.backlight();
@@ -75,9 +73,9 @@ void loop() {
         lcd.print("     BIEN !");
         setYellow();
 
-        Wire.beginTransmission(8);  // Dirección del esclavo
-        Wire.write(254);
-        Wire.endTransmission();
+        Wire1.beginTransmission(8);  // Dirección del esclavo
+        Wire1.write(254);
+        Wire1.endTransmission();
         Serial.println("Inicio juego");
         estado = 1;
 
@@ -97,16 +95,16 @@ void loop() {
 
 
       if (millis() - tiempo > 60000) {
-        Wire.beginTransmission(8);  // Dirección del esclavo (8)
-        Wire.write(255);
-        Wire.endTransmission();
+        Wire1.beginTransmission(8);  // Dirección del esclavo (8)
+        Wire1.write(255);
+        Wire1.endTransmission();
 
         delay(10);
 
-        Wire.requestFrom(8, 1);
+        Wire1.requestFrom(8, 1);
 
-        if (Wire.available()) {
-          cuentaPuntos = Wire.read();
+        if (Wire1.available()) {
+          cuentaPuntos = Wire1.read();
           Serial.print("Puntaje recibido del esclavo: ");
           Serial.println(cuentaPuntos);
         }
