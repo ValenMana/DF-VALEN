@@ -2,7 +2,9 @@
 #include <TimerOne.h>
 #include <Adafruit_NeoPixel.h>
 #include <AlmostRandom.h>
-#include <Wire.h>
+
+const int DATA_PIN = 8;  //sda 8
+const int CLK_PIN = 9;
 
 
 byte data = 0;
@@ -63,7 +65,7 @@ unsigned int flags[SONAR_NUM];
 
 int medicion;
 
-int estado = -1; 
+int estado = -1;
 int z = 1;
 
 int puntaje = 0;
@@ -95,10 +97,8 @@ NewPing sonar[SONAR_NUM] = {  // AGREGAR
 void setup() {
   Serial.begin(9600);
 
-  Wire.begin(8);  // Dirección del esclavo
-  Wire.onReceive(recibirDato);
-  Wire.onRequest(responderAlMaestro);  // Se llama cuando el maestro hace requestFrom()
-
+  pinMode(CLK_PIN, INPUT);
+  pinMode(DATA_PIN, INPUT);
 
   randomSeed(analogRead(A15));
 
@@ -129,13 +129,25 @@ void loop() {
 }
 
 void maquina() {
+
+  byte received = readByte();
+
+  if (received == 254) {
+    estado = 0;
+  }
+
+  if (received == 255) {
+    sendByte(puntaje);
+    estado = 5;
+  }
+
   switch (estado) {
 
     case -1:
 
       break;
 
-    
+
     case 0:
       estado = 1;
       timer_1 = 0;
@@ -231,7 +243,7 @@ void maquina() {
     case 5:
 
 
-      estado = 0;
+      estado = -1;
       clear_neo();
       Serial.println("Puntaje" + String(puntaje));
       //delay(1000);
@@ -272,25 +284,31 @@ void timer_interrupt() {
   timer_1++;
 }
 
-void recibirDato(int cuantos) {
-  while (Wire.available()) {
+byte readByte() {
+  byte value = 0;
+  while (digitalRead(CLK_PIN) == HIGH)
+    ;  // Espera LOW
 
-    data = Wire.read();
-    Serial.println(data);
-    if (data == 254) {
-      estado = 0;
-    }
-    if (data == 255) {
-      estado = 5;
-    }
+  for (int i = 7; i >= 0; i--) {
+    while (digitalRead(CLK_PIN) == LOW)
+      ;
+    value |= (digitalRead(DATA_PIN) << i);
+    while (digitalRead(CLK_PIN) == HIGH)
+      ;
   }
+  return value;
 }
 
-void responderAlMaestro() {
-  if (data == 255) {
-    Serial.println("Puntaje:");
-    Serial.println(puntaje);
-    Wire.write(puntaje);  // Envía 1 byte (por ejemplo, 99)
+void sendByte(byte data) {
+  pinMode(DATA_PIN, OUTPUT);  // cambia dirección del pin
+
+  for (int i = 7; i >= 0; i--) {
+    while (digitalRead(CLK_PIN) == LOW)
+      ;  // Espera subida
+    digitalWrite(DATA_PIN, (data >> i) & 1);
+    while (digitalRead(CLK_PIN) == HIGH)
+      ;  // Espera bajada
   }
-  //Serial.println("Respondí al maestro");
+
+  pinMode(DATA_PIN, INPUT);  // vuelve a modo escucha
 }

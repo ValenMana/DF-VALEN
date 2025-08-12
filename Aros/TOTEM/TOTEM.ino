@@ -2,6 +2,10 @@ int estado = 0;
 int cuentaPuntos = 0;
 String dat;
 
+const int DATA_PIN = 25;
+const int CLK_PIN = 26;
+
+
 String dataIn;
 #include <SPI.h>
 #include <MFRC522.h>
@@ -39,15 +43,15 @@ void setup() {
   Serial.begin(115200);
   Wire.begin(21, 22);
 
+  pinMode(CLK_PIN, OUTPUT);
+  pinMode(DATA_PIN, OUTPUT);
+
   Serial.println("Inicializando");
   SPI.begin();      // Init SPI bus
   rfid.PCD_Init();  // Init
   lcd.init();       // initialize the lcd
   lcd.init();
   pixels.begin();  // INITIALIZE NeoPixel strip object (REQUIRED)
-
-  Wire1.begin(25, 26, 100000);  // SDA=21, SCL=22
-
   // Print a message to the LCD.
   lcd.backlight();
   lcd.clear();
@@ -73,9 +77,8 @@ void loop() {
         lcd.print("     BIEN !");
         setYellow();
 
-        Wire1.beginTransmission(8);  // Dirección del esclavo
-        Wire1.write(254);
-        Wire1.endTransmission();
+        sendByte(254);
+
         Serial.println("Inicio juego");
         estado = 1;
 
@@ -95,19 +98,13 @@ void loop() {
 
 
       if (millis() - tiempo > 60000) {
-        Wire1.beginTransmission(8);  // Dirección del esclavo (8)
         Wire1.write(255);
-        Wire1.endTransmission();
+        sendByte(255);
+        delayMicroseconds(500);  // espera mínima
+        byte response = receiveByte();
+        Serial.print("Puntaje recibido del esclavo: ");
+        Serial.println(response);
 
-        delay(10);
-
-        Wire1.requestFrom(8, 1);
-
-        if (Wire1.available()) {
-          cuentaPuntos = Wire1.read();
-          Serial.print("Puntaje recibido del esclavo: ");
-          Serial.println(cuentaPuntos);
-        }
         estado = 3;
         Serial.println("Fin");
         Serial.println("End");
@@ -162,4 +159,28 @@ void setYellow() {
 
     pixels.show();  // Send the updated pixel colors to the hardware.
   }
+}
+
+void sendByte(byte data) {
+  pinMode(DATA_PIN, OUTPUT);
+  for (int i = 7; i >= 0; i--) {
+    digitalWrite(DATA_PIN, (data >> i) & 1);
+    digitalWrite(CLK_PIN, HIGH);
+    delayMicroseconds(100);
+    digitalWrite(CLK_PIN, LOW);
+    delayMicroseconds(100);
+  }
+}
+
+byte receiveByte() {
+  byte value = 0;
+  pinMode(DATA_PIN, INPUT);  // cambia dirección del pin
+  for (int i = 7; i >= 0; i--) {
+    digitalWrite(CLK_PIN, HIGH);
+    delayMicroseconds(100);
+    value |= (digitalRead(DATA_PIN) << i);
+    digitalWrite(CLK_PIN, LOW);
+    delayMicroseconds(100);
+  }
+  return value;
 }
