@@ -8,19 +8,21 @@ String dataIn;
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <Adafruit_NeoPixel.h>
-#include <SoftwareSerial.h>
 
 
-#define PIN 7  // On Trinket or Gemma, suggest changing this to 1
+#define PIN 14  // On Trinket or Gemma, suggest changing this to 1
 
 #define NUMPIXELS 7  // Popular NeoPixel ring size
 
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
+
 LiquidCrystal_I2C lcd(0x27, 16, 2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 
-#define SS_PIN 10
-#define RST_PIN 9
+TwoWire I2C_MEGA = TwoWire(1);  // Bus 0 con pines personalizados
+
+#define SS_PIN 5
+#define RST_PIN 13
 
 MFRC522 rfid(SS_PIN, RST_PIN);  // Instance of the class
 
@@ -36,13 +38,17 @@ long tiempo;
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(9600);
+  Serial.begin(115200);
+  Wire.begin(21, 22);
+
   Serial.println("Inicializando");
   SPI.begin();      // Init SPI bus
   rfid.PCD_Init();  // Init
   lcd.init();       // initialize the lcd
   lcd.init();
   pixels.begin();  // INITIALIZE NeoPixel strip object (REQUIRED)
+
+  I2C_MEGA.begin(25, 26);  // SDA, SCL personalizados
 
   // Print a message to the LCD.
   lcd.backlight();
