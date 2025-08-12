@@ -8,7 +8,7 @@ void setup() {
   pinMode(12, INPUT_PULLUP);
 
   Serial.println("Inicio TOTEM");
-  delay(10000);
+  //delay(10000);
 }
 
 void loop() {

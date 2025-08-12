@@ -2,8 +2,10 @@
 #include <TimerOne.h>
 #include <Adafruit_NeoPixel.h>
 #include <AlmostRandom.h>
+#include <Wire.h>
 
 
+byte data = 0;
 
 // ESTADOS
 
@@ -61,7 +63,7 @@ unsigned int flags[SONAR_NUM];
 
 int medicion;
 
-int estado = 0;
+int estado = 1; //-1
 int z = 1;
 
 int puntaje = 0;
@@ -72,7 +74,7 @@ int randomSelectAnterior = 0;
 unsigned long timer_1 = 0;
 
 const bool enabled[12] = {
-  1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0
+  1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0
 };
 
 NewPing sonar[SONAR_NUM] = {  // AGREGAR
@@ -92,7 +94,11 @@ NewPing sonar[SONAR_NUM] = {  // AGREGAR
 
 void setup() {
   Serial.begin(9600);
-  Serial3.begin(9600);
+
+  Wire.begin(8);  // Dirección del esclavo
+  Wire.onReceive(recibirDato);
+  Wire.onRequest(responderAlMaestro);  // Se llama cuando el maestro hace requestFrom()
+
 
   randomSeed(analogRead(A15));
 
@@ -124,19 +130,17 @@ void loop() {
 
 void maquina() {
   switch (estado) {
+
+    case -1:
+
+      break;
+
+    
     case 0:
-
-      if (Serial3.available()) {
-        msg = Serial3.readStringUntil('\n');
-        Serial.println(msg);
-        if (msg.toInt() == 8) {
-          estado = 1;
-          timer_1 = 0;
-          clear_neo();
-          //Serial.println(-2);
-        }
-      }
-
+      estado = 1;
+      timer_1 = 0;
+      puntaje = 0;
+      clear_neo();
       break;
 
     case 1:
@@ -177,20 +181,6 @@ void maquina() {
       Serial.println("midiendo");
       Serial.println(randomSelect * 2);
       Serial.println("Medicion:" + String(medicion));
-
-      if (Serial3.available()) {
-        msg = Serial3.readStringUntil('\n');
-        if (msg.toInt() == 3) {
-          estado = 0;
-          clear_neo();
-          Serial.println("Puntaje" + String(puntaje));
-          //delay(1000);
-         
-
-          puntaje = 0;
-          stby_neo(0, 0, 150);
-        }
-      }
 
 
       if (enabled[(randomSelect * 2)] == 0) {
@@ -237,6 +227,17 @@ void maquina() {
       }
 
       break;
+
+    case 5:
+
+
+      estado = 0;
+      clear_neo();
+      Serial.println("Puntaje" + String(puntaje));
+      //delay(1000);
+      puntaje = 0;
+      stby_neo(0, 0, 150);
+      break;
   }
 }
 
@@ -269,4 +270,27 @@ void aroSelect(int aro) {
 
 void timer_interrupt() {
   timer_1++;
+}
+
+void recibirDato(int cuantos) {
+  while (Wire.available()) {
+
+    data = Wire.read();
+    Serial.println(data);
+    if (data == 254) {
+      estado = 0;
+    }
+    if (data == 255) {
+      estado = 5;
+    }
+  }
+}
+
+void responderAlMaestro() {
+  if (data == 255) {
+    Serial.println("Puntaje:");
+    Serial.println(puntaje);
+    Wire.write(puntaje);  // Envía 1 byte (por ejemplo, 99)
+  }
+  //Serial.println("Respondí al maestro");
 }

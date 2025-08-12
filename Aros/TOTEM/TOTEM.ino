@@ -10,9 +10,6 @@ String dataIn;
 #include <Adafruit_NeoPixel.h>
 #include <SoftwareSerial.h>
 
-SoftwareSerial mySerial(4, 3);  // RX, TX
-
-
 
 #define PIN 7  // On Trinket or Gemma, suggest changing this to 1
 
@@ -39,9 +36,8 @@ long tiempo;
 
 void setup() {
   // put your setup code here, to run once:
-  mySerial.begin(9600);
   Serial.begin(9600);
-
+  Serial.println("Inicializando");
   SPI.begin();      // Init SPI bus
   rfid.PCD_Init();  // Init
   lcd.init();       // initialize the lcd
@@ -64,7 +60,7 @@ void loop() {
       lcd.print("DESAFIO");
       lcd.setCursor(5, 1);
       lcd.print("AROS !");
-      if (rfid.PICC_IsNewCardPresent()) {
+      if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
         //Serial.println("Tarjeta detectada.");
         lcd.clear();
         lcd.setCursor(0, 0);
@@ -72,16 +68,22 @@ void loop() {
         lcd.setCursor(0, 1);
         lcd.print("     BIEN !");
         setYellow();
-        for (int i = 0; i < 10; i++) {
-          mySerial.print("8\n ");
-          delay(50);
-        }
+
+        Wire.beginTransmission(8);  // Dirección del esclavo
+        Wire.write(254);
+        Wire.endTransmission();
+        Serial.println("Inicio juego");
+        estado = 1;
+
         Serial.println("Start");
 
 
         tiempo = millis();
         //Serial.println(tiempo);
         estado = 1;
+
+        rfid.PICC_HaltA();
+        rfid.PCD_StopCrypto1();
       }
       break;
 
@@ -89,28 +91,27 @@ void loop() {
 
 
       if (millis() - tiempo > 60000) {
+        Wire.beginTransmission(8);  // Dirección del esclavo (8)
+        Wire.write(255);
+        Wire.endTransmission();
+
+        delay(10);
+
+        Wire.requestFrom(8, 1);
+
+        if (Wire.available()) {
+          cuentaPuntos = Wire.read();
+          Serial.print("Puntaje recibido del esclavo: ");
+          Serial.println(cuentaPuntos);
+        }
         estado = 3;
+        Serial.println("Fin");
         Serial.println("End");
       }
-      if (mySerial.available()) {
-        dat = mySerial.readString();
-        Serial.println(dat);
-        if (dat.toInt() == 9) {
-          cuentaPuntos++;
-          Serial.println("Sumar: " + String(cuentaPuntos));
-        }
-      }
-
-
 
       break;
 
     case 3:
-      mySerial.print("3\n");
-
-
-
-
       //cuentaPuntos = recibirPuntaje();
 
       Serial.println("estado 3: " + String(cuentaPuntos));
@@ -157,23 +158,4 @@ void setYellow() {
 
     pixels.show();  // Send the updated pixel colors to the hardware.
   }
-}
-
-int recibirPuntaje() {
-  String dato = "";
-
-  // Espera a que haya datos disponibles en mySerial
-  while (mySerial.available() == 0) {
-    // Esperando datos...
-  }
-
-  // Lee los datos hasta el salto de línea
-  while (mySerial.available() > 0) {
-    char c = mySerial.read();
-    if (c == '\n') break;
-    dato += c;
-    delay(5);  // Asegura que lleguen todos los caracteres
-  }
-
-  return dato.toInt();
 }

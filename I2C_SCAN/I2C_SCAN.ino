@@ -1,7 +1,7 @@
 #include <Wire.h>
 
 void setup() {
-  Wire.begin(21, 22); // SDA = GPIO21, SCL = GPIO22 para D1 R32 (ESP32)
+  Wire.begin(); // SDA = GPIO21, SCL = GPIO22 para D1 R32 (ESP32)
   Serial.begin(115200);
   while (!Serial); // Esperar conexión serial (opcional)
 

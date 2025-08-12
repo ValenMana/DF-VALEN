@@ -1,8 +1,8 @@
 #include <SPI.h>
 #include <MFRC522.h>
 
-#define SS_PIN 13
-#define RST_PIN 5
+#define SS_PIN 10
+#define RST_PIN 9
 
 MFRC522 rfid(SS_PIN, RST_PIN);  // Instance of the class
 
@@ -36,7 +36,7 @@ void loop() {
     if (input == -1) {
       // If input is -1, restart the microcontroller
       Serial.println(F("Received -1, restarting..."));
-      reset();  // Call the reset function to restart the Arduino
+      //reset();  // Call the reset function to restart the Arduino
     }
   }
   /*
@@ -118,9 +118,7 @@ void loop() {
 /**
  * Function to reset the Arduino (microcontroller).
  */
-void reset() {
-  ESP.restart();
-}
+
 
 /**
  * Helper routine to dump a byte array as hex values to Serial. 
