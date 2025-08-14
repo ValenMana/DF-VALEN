@@ -1,10 +1,12 @@
 #include <Adafruit_NeoPixel.h>
 #include <NewPing.h>
+#include <SoftwareSerial.h>
 
-const int DATA_PIN = 8;  //sda 8
-const int CLK_PIN = 9;
 
-int estado = 0;
+#define DATA_PIN 9
+#define COMM_PIN 10
+
+
 int puntaje = 0;
 
 int z = 1;
@@ -81,11 +83,16 @@ const bool enabled[12] = {
 int randomNum;
 
 int state = 1;
+int estado = 0;
+
 
 void setup() {
-  pinMode(CLK_PIN, INPUT_PULLUP);
-  pinMode(DATA_PIN, OUTPUT);
   Serial.begin(9600);
+
+  pinMode(DATA_PIN, OUTPUT);
+  digitalWrite(DATA_PIN, LOW);
+
+  pinMode(COMM_PIN, INPUT);
 
   for (int i = 0; i < STICK_NUM; i++) {
     pixels[i].begin();
@@ -104,32 +111,52 @@ void setup() {
 
 void loop() {
   //  randomSeed(analogRead(A5));
+  //aroSelect(0);
+  
+  
+ // Serial.println(estado);
 
   switch (estado) {
     case 0:
-      if (digitalRead(CLK_PIN) == HIGH) {
+          Serial.println(debounce(COMM_PIN));
+
+      if(debounce(COMM_PIN) == 1){
+        clear_neo();
         estado = 1;
+        state = 1;
         Serial.println("Arranque");
-      }
+      }   
       break;
 
     case 1:
-      //game();
-      if (digitalRead(CLK_PIN) == LOW) {
-        delay(10);
-        Serial.println("Dato enviado: " + String(puntaje));
+      game();
+      if (debounce(COMM_PIN) == LOW) {
+        //delay(10);
+        //Serial.println("Dato enviado: " + String(puntaje));
+        
+        tiempoAnterior = millis();
+        
         estado = 2;
       }
+      
+      //estado = 0;
+      
       break;
     case 2:
-      delay(50);
-      sendByte(puntaje);
-      delay(100);
+     
+
+      //LOGICA DE ENVIO DE PUNTOS IRIA ACA
+     
       Serial.println("Fin");
+      stby_neo(0,0,150);
       estado = 0;
+      //digitalWrite(DATA_PIN, LOW);
 
       break;
   }
+      //Serial.println(state);
+
+  ///game();
 }
 
 
@@ -137,7 +164,7 @@ void game() {
   switch (state) {
     case 1:
       randomSeed(analogRead(A5));
-      randomNum = random(0, 6);
+      randomSelect = random(0, 6);
       state = 4;
       break;
 
@@ -161,12 +188,9 @@ void game() {
       if (medicion < 35 && medicion != 0) {
 
         if (enabled[(randomSelect * 2) + 1] == 0) {
-          for (int i = 0; i < 4; i++) {
-            aroSelect(randomSelect);
-            ////delay(110);
             clear_neo();
-            //delay(30);
-          }
+            //aroSelect(randomSelect);
+          
           randomSelectAnterior = randomSelect;
           puntaje += 1;
           state = 1;
@@ -192,19 +216,6 @@ void game() {
   }
 }
 
-void sendByte(byte data) {
-  pinMode(CLK_PIN, OUTPUT);
-  digitalWrite(CLK_PIN, HIGH);
-  while (puntaje != 0) {
-    digitalWrite(DATA_PIN, HIGH);
-    delay(10);
-    digitalWrite(DATA_PIN, LOW);
-    delay(10);
-    puntaje -= 1;
-  }
-  digitalWrite(CLK_PIN, LOW);
-  pinMode(CLK_PIN, INPUT_PULLUP);
-}
 
 void stby_neo(int r, int g, int b) {
   for (int i = 0; i < STICK_NUM; i++) {
@@ -230,5 +241,43 @@ void aroSelect(int aro) {
   for (int j = 0; j < PIXELS_NUM; j++) {
     pixels[aro].setPixelColor(j, pixels[aro].Color(0, 150, 0));
     pixels[aro].show();
+  }
+}
+
+
+bool debounce(int pin) {
+  const unsigned long debounceDelay = 50; // Tiempo de rebote en ms
+
+  static int lastButtonState = LOW;
+  static int buttonState = LOW;
+  static unsigned long lastDebounceTime = 0;
+
+  int reading = digitalRead(pin);
+
+  if (reading != lastButtonState) {
+    lastDebounceTime = millis();
+  }
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    if (reading != buttonState) {
+      buttonState = reading;
+    }
+  }
+
+  lastButtonState = reading;
+
+  return buttonState;
+}
+
+void sendBit(bool bitValue) {
+  digitalWrite(DATA_PIN, HIGH);
+  delay(bitValue ? 20 : 10); // 20 ms = 1, 10 ms = 0
+  digitalWrite(DATA_PIN, LOW);
+  delay(10); // pausa entre bits
+}
+
+void sendByte(byte value) {
+  for (int i = 0; i < 8; i++) {
+    sendBit(value & (1 << i));
   }
 }
