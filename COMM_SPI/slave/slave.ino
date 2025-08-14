@@ -1,42 +1,57 @@
-const int DATA_PIN = 8; //sda 8
-const int CLK_PIN  = 9;
+const int DATA_PIN = 9;  //sda 8
+const int CLK_PIN = 8;
+
+int estado = 0;
+int puntaje = 0;
 
 void setup() {
-  pinMode(CLK_PIN, INPUT);
-  pinMode(DATA_PIN, INPUT);
+  pinMode(CLK_PIN, INPUT_PULLUP);
+  pinMode(DATA_PIN, OUTPUT);
   Serial.begin(9600);
+
+  Serial.println("Inicio mega");
 }
 
 void loop() {
-  byte received = readByte();
-  Serial.print("Recibido: ");
-  Serial.println(received);
+  randomSeed(analogRead(A5));
 
-  byte toSend = received + 1;
-  sendByte(toSend);
-  delay(100); // Espera para estabilidad
-}
+  switch (estado) {
+    case 0:
+      if (digitalRead(CLK_PIN) == HIGH) {
+        estado = 1;
+        Serial.println("Arranque");
+      }
+      break;
 
-byte readByte() {
-  byte value = 0;
-  while (digitalRead(CLK_PIN) == HIGH); // Espera LOW
-  
-  for (int i = 7; i >= 0; i--) {
-    while (digitalRead(CLK_PIN) == LOW);
-    value |= (digitalRead(DATA_PIN) << i);
-    while (digitalRead(CLK_PIN) == HIGH);
+    case 1:
+      if (digitalRead(CLK_PIN) == LOW) {
+        delay(10);
+        puntaje = random(0, 255);
+        Serial.println("Dato enviado: " + String(puntaje));
+        estado = 2;
+      }
+      break;
+    case 2:
+      delay(50);
+      sendByte(puntaje);
+      delay(100);
+      Serial.println("Fin");
+      estado = 0;
+
+      break;
   }
-  return value;
 }
 
 void sendByte(byte data) {
-  pinMode(DATA_PIN, OUTPUT); // cambia dirección del pin
-
-  for (int i = 7; i >= 0; i--) {
-    while (digitalRead(CLK_PIN) == LOW); // Espera subida
-    digitalWrite(DATA_PIN, (data >> i) & 1);
-    while (digitalRead(CLK_PIN) == HIGH); // Espera bajada
+  pinMode(CLK_PIN, OUTPUT);
+  digitalWrite(CLK_PIN, HIGH);
+  while (puntaje != 0) {
+    digitalWrite(DATA_PIN, HIGH);
+    delay(10);
+    digitalWrite(DATA_PIN, LOW);
+    delay(10);
+    puntaje -= 1;
   }
-
-  pinMode(DATA_PIN, INPUT); // vuelve a modo escucha
+  digitalWrite(CLK_PIN, LOW);
+  pinMode(CLK_PIN, INPUT_PULLUP);
 }

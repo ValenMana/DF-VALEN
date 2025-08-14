@@ -1,13 +1,12 @@
 #include <NewPing.h>
 #include <TimerOne.h>
 #include <Adafruit_NeoPixel.h>
-#include <AlmostRandom.h>
 
-const int DATA_PIN = 8;  //sda 8
-const int CLK_PIN = 9;
+const int DATA_PIN = 9;  //sda 8
+const int CLK_PIN = 8;
 
-const int BIT_DELAY = 100; // ms entre bits
-  
+const int BIT_DELAY = 100;  // ms entre bits
+
 
 
 byte data = 0;
@@ -32,7 +31,6 @@ int state;
 #define PIXELS_NUM 40
 #define STICK_NUM 6
 
-AlmostRandom ar;
 
 
 Adafruit_NeoPixel pixels[STICK_NUM] = {
@@ -100,10 +98,8 @@ NewPing sonar[SONAR_NUM] = {  // AGREGAR
 void setup() {
   Serial.begin(9600);
 
-  pinMode(CLK_PIN, INPUT_PULLUP);
-  pinMode(DATA_PIN, OUTPUT);
 
-  randomSeed(analogRead(A15));
+
 
 
   Timer1.initialize(1000);
@@ -121,30 +117,37 @@ void setup() {
   stby_neo(0, 0, 150);
   delay(500);
   Serial.println("Inicio");
+  pinMode(CLK_PIN, INPUT_PULLUP);
+  pinMode(DATA_PIN, OUTPUT);
 }
 
 String msg;
 
 void loop() {
   //Serial.println(timer_1);
+  //randomSeed(analogRead(A5));
+
   maquina();
   //aroSelect(5);
 }
 
 void maquina() {
+  int clkState = digitalRead(CLK_PIN);
+  //Serial.println(clkState);
 
-  if(digitalRead(CLK_PIN) == HIGH && estado == -1){
-        estado = 0;  
-  }else if(digitalRead(CLK_PIN) == LOW && 1 < estado){
-      enviarNumero(puntaje);
-
-        estado = 5;
+  if (digitalRead(CLK_PIN) == LOW && estado > -1) {
+    delay(10);
+    puntaje = 20;
+    Serial.println("Dato enviado: " + String(puntaje));
+    estado = 5;
   }
-
   switch (estado) {
     case -1:
+      if (digitalRead(CLK_PIN) == HIGH) {
+        estado = 0;
+        Serial.println("Arranque");
+      }
 
-      
       break;
 
     case 0:
@@ -156,14 +159,16 @@ void maquina() {
       break;
     case 1:
       Serial.println("Estado 1");
-      randomSelect = ar.getRandomByte() % 6;
+      randomSelect = random(0, 6);
       //aroSelect(randomSelect);
 
-      Serial.println("Random: " + String(randomSelect));
-      Serial.println("Sensores: ");
-      Serial.println(randomSelect * 2);
-      Serial.println((randomSelect * 2) + 1);
+      //Serial.println("Random: " + String(randomSelect));
+      //Serial.println("Sensores: ");
+      //Serial.println(randomSelect * 2);
+      //Serial.println((randomSelect * 2) + 1);
       //delay(1000);
+
+
 
       estado = 4;
 
@@ -171,19 +176,14 @@ void maquina() {
 
     case 4:
       //delay(1);
+
       if ((enabled[randomSelect * 2] == 0 && enabled[(randomSelect * 2) + 1] == 0) || randomSelect == randomSelectAnterior) {
-        Serial.println("Error, regresando");
-        /*
-        for (int i = 0; i < STICK_NUM; i++) {
-          pixels[i].clear();
-          pixels[i].show();
-        }*/
 
         estado = 1;
       } else {
-        Serial.println("ok");
+        //Serial.println("ok");
         aroSelect(randomSelect);
-        delay(20);
+        //delay(20);
         estado = 2;
       }
       break;
@@ -192,9 +192,9 @@ void maquina() {
       delay(1);
 
       medicion = sonar[randomSelect * 2].ping_cm();
-      Serial.println("midiendo");
-      Serial.println(randomSelect * 2);
-      Serial.println("Medicion:" + String(medicion));
+      // Serial.println("midiendo");
+      //Serial.println(randomSelect * 2);
+      //Serial.println("Medicion:" + String(medicion));
 
 
       if (enabled[(randomSelect * 2)] == 0) {
@@ -221,14 +221,14 @@ void maquina() {
       delay(1);
 
       medicion = sonar[(randomSelect * 2) + 1].ping_cm();
-      Serial.println("midiendo 2");
-      Serial.println((randomSelect * 2) + 1);
+      //Serial.println("midiendo 2");
+      // Serial.println((randomSelect * 2) + 1);
 
       if (medicion < 30 && medicion != 0) {
 
 
-          clear_neo();
-         
+        clear_neo();
+
         randomSelectAnterior = randomSelect;
         estado = 1;
         puntaje += 1;
@@ -237,10 +237,12 @@ void maquina() {
       break;
 
     case 5:
-
+      delay(50);
+      sendByte(puntaje);
+      delay(100);
 
       clear_neo();
-      Serial.println("Puntaje" + String(puntaje));
+      Serial.println("Fin");
       //delay(1000);
       puntaje = 0;
       stby_neo(0, 0, 150);
@@ -281,80 +283,16 @@ void timer_interrupt() {
   timer_1++;
 }
 
-byte readByte() {
-  // Si CLK está en alto, no hay transmisión
-  if (digitalRead(CLK_PIN) == HIGH) {
-    return 255;  // Nada recibido
-  }
-
-  byte value = 0;
-  for (int i = 7; i >= 0; i--) {
-    // Espera a que CLK suba
-    unsigned long start = millis();
-    while (digitalRead(CLK_PIN) == LOW) {
-      if (millis() - start > 10) return 255; // Timeout para evitar bloqueo
-    }
-
-    // Lee el bit
-    value |= (digitalRead(DATA_PIN) << i);
-
-    // Espera a que CLK baje
-    start = millis();
-    while (digitalRead(CLK_PIN) == HIGH) {
-      if (millis() - start > 10) return 255;
-    }
-  }
-
-  return value;
-}
-
-bool readByteAvailable(byte &value) {
-  if (digitalRead(CLK_PIN) == HIGH) return false;
-
-  value = 0;
-  for (int i = 7; i >= 0; i--) {
-    unsigned long start = millis();
-    while (digitalRead(CLK_PIN) == LOW) {
-      if (millis() - start > 20) return false;
-    }
-    value |= (digitalRead(DATA_PIN) << i);
-
-    start = millis();
-    while (digitalRead(CLK_PIN) == HIGH) {
-      if (millis() - start > 20) return false;
-    }
-  }
-
-  return true;
-}
-
-
 void sendByte(byte data) {
-  pinMode(DATA_PIN, OUTPUT);  // cambia dirección del pin
-
-  for (int i = 7; i >= 0; i--) {
-    while (digitalRead(CLK_PIN) == LOW)
-      ;  // Espera subida
-    digitalWrite(DATA_PIN, (data >> i) & 1);
-    while (digitalRead(CLK_PIN) == HIGH)
-      ;  // Espera bajada
+  pinMode(CLK_PIN, OUTPUT);
+  digitalWrite(CLK_PIN, HIGH);
+  while (puntaje != 0) {
+    digitalWrite(DATA_PIN, HIGH);
+    delay(10);
+    digitalWrite(DATA_PIN, LOW);
+    delay(10);
+    puntaje -= 1;
   }
-
-  pinMode(DATA_PIN, INPUT);  // vuelve a modo escucha
-}
-
-void enviarNumero(byte valor) {
-  // Enviar bit de inicio (LOW)
-  digitalWrite(DATA_PIN, LOW);
-  delay(BIT_DELAY);
-
-  // Enviar los 8 bits del número (LSB primero)
-  for (int i = 0; i < 8; i++) {
-    bool bitActual = bitRead(valor, i);
-    digitalWrite(DATA_PIN, bitActual);
-    delay(BIT_DELAY);
-  }
-
-  // Volver la línea a HIGH (reposo)
-  digitalWrite(DATA_PIN, HIGH);
+  digitalWrite(CLK_PIN, LOW);
+  pinMode(CLK_PIN, INPUT_PULLUP);
 }
