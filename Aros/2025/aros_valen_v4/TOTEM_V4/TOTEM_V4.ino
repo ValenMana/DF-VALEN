@@ -3,6 +3,15 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
+
+bool rcpt = false;
+
+#define DATA_PIN 26
+#define COMM_PIN 25
+
+byte received;
+unsigned long t;
+
 LiquidCrystal_I2C lcd(0x27, 16, 2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 #define SS_PIN 5
@@ -18,21 +27,21 @@ byte nuidPICC[4];
 // Variable to store the scanned card ID as a string
 String cardID = "";
 
-const int DATA_PIN = 25;  //25
-const int CLK_PIN = 26;   //26
-
-const int BTN = 14;
-
 int estado = 0;
 unsigned long anterior;
 
 int puntaje = 0;
 
 void setup() {
-  pinMode(CLK_PIN, OUTPUT);
-  pinMode(DATA_PIN, INPUT_PULLUP);
-  pinMode(BTN, INPUT_PULLUP);
+  pinMode(COMM_PIN, OUTPUT);
   Serial.begin(115200);
+
+
+
+  pinMode(DATA_PIN, INPUT);
+
+  pinMode(COMM_PIN, OUTPUT);
+
 
   SPI.begin();      // Init SPI bus
   rfid.PCD_Init();  // Init MFRC522
@@ -48,6 +57,8 @@ void setup() {
   lcd.init();
   // Print a message to the LCD.
   lcd.backlight();
+
+  digitalWrite(COMM_PIN, LOW);
 
   Serial.println("Inicio totem");
 }
@@ -70,23 +81,32 @@ void loop() {
         lcd.print("     BIEN !");
         Serial.println("Inicio juego");
         estado = 1;
-        digitalWrite(CLK_PIN, HIGH);
+        digitalWrite(COMM_PIN, HIGH);
         anterior = millis();
         rfid.PICC_HaltA();
         rfid.PCD_StopCrypto1();
       }
+
       break;
 
     case 1:
-      if (millis() - anterior > 10000) {
-        digitalWrite(CLK_PIN, LOW);
+      if (millis() - anterior > 60000) {
         estado = 2;
         Serial.println("Espera puntos");
-        receiveByte();
+        digitalWrite(COMM_PIN, LOW);
+        anterior = millis();
       }
       break;
 
     case 2:
+
+      //ACA IRIRA LA LOGICA DE RECEPCION DE LOS PUNTOS VIA SERIAL
+      estado = 3;
+
+      break;
+
+    case 3:
+
       lcd.clear();
       lcd.setCursor(1, 0);
       lcd.print("Puntos ganados");
@@ -99,21 +119,30 @@ void loop() {
       puntaje = 0;
       estado = 0;
       Serial.println("Fin");
+
       break;
   }
 }
+bool debounce(int pin) {
+  const unsigned long debounceDelay = 50;  // Tiempo de rebote en ms
 
-void receiveByte() {
-  pinMode(CLK_PIN, INPUT_PULLUP);
-  while (digitalRead(CLK_PIN) == HIGH) {
-    if (digitalRead(DATA_PIN) == HIGH) {
-      delay(1);
-      if (digitalRead(DATA_PIN) == LOW) {
-        puntaje += 1;
-      }
+  static int lastButtonState = LOW;
+  static int buttonState = LOW;
+  static unsigned long lastDebounceTime = 0;
+
+  int reading = digitalRead(pin);
+
+  if (reading != lastButtonState) {
+    lastDebounceTime = millis();
+  }
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    if (reading != buttonState) {
+      buttonState = reading;
     }
   }
-  Serial.println("Recibido: " + String(puntaje));
-  pinMode(CLK_PIN, OUTPUT);
-  digitalWrite(CLK_PIN, LOW);
+
+  lastButtonState = reading;
+
+  return buttonState;
 }
