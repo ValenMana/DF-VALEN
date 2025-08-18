@@ -6,6 +6,11 @@
 
 bool rcpt = false;
 
+int ultimoEstado = LOW;
+
+int state;
+
+
 #define DATA_PIN 26
 #define COMM_PIN 25
 
@@ -90,12 +95,33 @@ void loop() {
       break;
 
     case 1:
+    /*
+      if (millis() - anterior > 60000) {
+        estado = 2;
+        Serial.println("Espera puntos");
+        digitalWrite(COMM_PIN, LOW);
+        anterior = millis();
+      }*/
+      state = debounce(DATA_PIN);
+
+      // Detectar flanco de subida (LOW -> HIGH)
+      if (ultimoEstado == LOW && state == HIGH) {
+        puntaje++;
+        Serial.print("Puntos: ");
+        Serial.println(puntaje);
+      }
+
+      ultimoEstado = state;
+      delay(5);
+
       if (millis() - anterior > 60000) {
         estado = 2;
         Serial.println("Espera puntos");
         digitalWrite(COMM_PIN, LOW);
         anterior = millis();
       }
+
+      delay(5);
       break;
 
     case 2:
@@ -111,7 +137,7 @@ void loop() {
       lcd.setCursor(1, 0);
       lcd.print("Puntos ganados");
       lcd.setCursor(7, 1);
-      lcd.print(puntaje);
+      lcd.print(puntaje - 1);
       delay(6000);
 
       lcd.clear();
