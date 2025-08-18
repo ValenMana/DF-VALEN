@@ -113,12 +113,25 @@ void loop() {
   //  randomSeed(analogRead(A5));
   //aroSelect(0);
   
-  
+  maquinaPrincipal();
  // Serial.println(estado);
+/*
+  if(Serial.readString().toInt() == 2){
+    Serial.println("Enviando...");
+    digitalWrite(DATA_PIN, HIGH);
+    delay(500);
+    digitalWrite(DATA_PIN, LOW);
+  }*/
+  
+ //Serial.println(state);
 
+  ///game();
+}
+
+void maquinaPrincipal(){
   switch (estado) {
     case 0:
-          Serial.println(debounce(COMM_PIN));
+      Serial.println(debounce(COMM_PIN));
 
       if(debounce(COMM_PIN) == 1){
         clear_neo();
@@ -154,9 +167,7 @@ void loop() {
 
       break;
   }
-      //Serial.println(state);
-
-  ///game();
+   
 }
 
 
@@ -193,6 +204,9 @@ void game() {
           
           randomSelectAnterior = randomSelect;
           puntaje += 1;
+          digitalWrite(DATA_PIN, HIGH);
+          delay(500);   
+          digitalWrite(DATA_PIN, LOW);
           state = 1;
         } else {
           state = 3;
@@ -210,6 +224,9 @@ void game() {
         randomSelectAnterior = randomSelect;
         state = 1;
         puntaje += 1;
+        digitalWrite(DATA_PIN, HIGH);
+        delay(500);
+        digitalWrite(DATA_PIN, LOW);
       }
 
       break;
