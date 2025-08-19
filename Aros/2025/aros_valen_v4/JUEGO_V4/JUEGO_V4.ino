@@ -41,16 +41,15 @@ Adafruit_NeoPixel pixels[STICK_NUM] = {
 };
 
 // ULTRASONIDOS
-
 #define US_PIN_1 22
 #define US_PIN_2 24
 #define US_PIN_3 26
 #define US_PIN_4 28
 #define US_PIN_5 30
-#define US_PIN_6 32
+#define US_PIN_6 38
 #define US_PIN_7 34
 #define US_PIN_8 36
-#define US_PIN_9 38
+#define US_PIN_9 32
 #define US_PIN_10 40
 #define US_PIN_11 42
 #define US_PIN_12 44
@@ -78,7 +77,7 @@ unsigned int measures[SONAR_NUM];
 unsigned int flags[SONAR_NUM];
 
 const bool enabled[12] = {
-  1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0
+  1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0
 };
 int randomNum;
 
@@ -105,77 +104,72 @@ void setup() {
 
   stby_neo(0, 0, 150);
 
-
+  //clear_neo();
   Serial.println("Inicio mega");
 }
 
 void loop() {
-  //  randomSeed(analogRead(A5));
-  //aroSelect(0);
-  
+  randomSeed(analogRead(A15));
+  //aroSelect(4);
+  //game();
   maquinaPrincipal();
- // Serial.println(estado);
-/*
+  // Serial.println(estado);
+  /*
   if(Serial.readString().toInt() == 2){
     Serial.println("Enviando...");
     digitalWrite(DATA_PIN, HIGH);
     delay(500);
     digitalWrite(DATA_PIN, LOW);
   }*/
-  
- //Serial.println(state);
+
+  //Serial.println(state);
 
   ///game();
 }
 
-void maquinaPrincipal(){
+void maquinaPrincipal() {
   switch (estado) {
     case 0:
       Serial.println(debounce(COMM_PIN));
 
-      if(debounce(COMM_PIN) == 1){
-        clear_neo();
+      if (debounce(COMM_PIN) == 1) {
+        //clear_neo();
         estado = 1;
         state = 1;
         Serial.println("Arranque");
-      }   
+        delay(100);
+        clear_neo(-1);
+      }
       break;
 
     case 1:
       game();
+      delay(10);
+
       if (debounce(COMM_PIN) == LOW) {
-        //delay(10);
-        //Serial.println("Dato enviado: " + String(puntaje));
-        
-        tiempoAnterior = millis();
-        
         estado = 2;
       }
-      
-      //estado = 0;
-      
       break;
     case 2:
-     
+
 
       //LOGICA DE ENVIO DE PUNTOS IRIA ACA
-     
+
       Serial.println("Fin");
-      stby_neo(0,0,150);
+      stby_neo(0, 0, 150);
       estado = 0;
       //digitalWrite(DATA_PIN, LOW);
 
       break;
   }
-   
 }
 
 
 void game() {
   switch (state) {
     case 1:
-      randomSeed(analogRead(A5));
-      randomSelect = random(0, 6);
+      //randomSeed(analogRead(A5));
+      randomSelect = random(0, 5);
       state = 4;
       break;
 
@@ -183,6 +177,9 @@ void game() {
       if ((enabled[randomSelect * 2] == 0 && enabled[(randomSelect * 2) + 1] == 0) || randomSelect == randomSelectAnterior) {
         state = 1;
       } else {
+
+
+
         aroSelect(randomSelect);
         state = 2;
       }
@@ -199,14 +196,21 @@ void game() {
       if (medicion < 35 && medicion != 0) {
 
         if (enabled[(randomSelect * 2) + 1] == 0) {
-            clear_neo();
-            //aroSelect(randomSelect);
-          
+          //clear_neo();
+          //aroSelect(randomSelect);
+          digitalWrite(DATA_PIN, HIGH);
+
+          for (int i = 0; i < 3; i++) {
+            delay(100);
+            aroSelect(randomSelect);
+            delay(100);
+            clear_neo(-1);
+          }
+          digitalWrite(DATA_PIN, LOW);
+
+
           randomSelectAnterior = randomSelect;
           puntaje += 1;
-          digitalWrite(DATA_PIN, HIGH);
-          delay(500);   
-          digitalWrite(DATA_PIN, LOW);
           state = 1;
         } else {
           state = 3;
@@ -220,7 +224,16 @@ void game() {
       medicion = sonar[(randomSelect * 2) + 1].ping_cm();
 
       if (medicion < 30 && medicion != 0) {
-        clear_neo();
+        //clear_neo();
+        digitalWrite(DATA_PIN, HIGH);
+
+        for (int i = 0; i < 3; i++) {
+          delay(100);
+          aroSelect(randomSelect);
+          delay(100);
+          clear_neo(-1);
+        }
+        digitalWrite(DATA_PIN, LOW);
         randomSelectAnterior = randomSelect;
         state = 1;
         puntaje += 1;
@@ -243,17 +256,21 @@ void stby_neo(int r, int g, int b) {
   }
 }
 
-void clear_neo() {
+void clear_neo(int actualStick) {
 
   for (int i = 0; i < STICK_NUM; i++) {
-    for (int j = 0; j < PIXELS_NUM; j++) {
-      pixels[i].setPixelColor(j, pixels[i].Color(0, 0, 0));
-      pixels[i].show();
+    if (i == actualStick) {
+    } else {
+      for (int j = 0; j < PIXELS_NUM; j++) {
+        pixels[i].setPixelColor(j, pixels[i].Color(0, 0, 0));
+        pixels[i].show();
+      }
     }
   }
 }
 
 void aroSelect(int aro) {
+
 
   for (int j = 0; j < PIXELS_NUM; j++) {
     pixels[aro].setPixelColor(j, pixels[aro].Color(0, 150, 0));
@@ -263,7 +280,7 @@ void aroSelect(int aro) {
 
 
 bool debounce(int pin) {
-  const unsigned long debounceDelay = 50; // Tiempo de rebote en ms
+  const unsigned long debounceDelay = 50;  // Tiempo de rebote en ms
 
   static int lastButtonState = LOW;
   static int buttonState = LOW;
@@ -288,9 +305,9 @@ bool debounce(int pin) {
 
 void sendBit(bool bitValue) {
   digitalWrite(DATA_PIN, HIGH);
-  delay(bitValue ? 20 : 10); // 20 ms = 1, 10 ms = 0
+  delay(bitValue ? 20 : 10);  // 20 ms = 1, 10 ms = 0
   digitalWrite(DATA_PIN, LOW);
-  delay(10); // pausa entre bits
+  delay(10);  // pausa entre bits
 }
 
 void sendByte(byte value) {
