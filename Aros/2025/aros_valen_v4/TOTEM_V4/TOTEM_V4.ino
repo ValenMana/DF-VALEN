@@ -2,6 +2,12 @@
 #include <MFRC522.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include <Adafruit_NeoPixel.h>
+
+#define PIN_TOTEM 14
+#define NUMPIXELS_TOTEM 7
+
+Adafruit_NeoPixel pixels(NUMPIXELS_TOTEM, PIN_TOTEM, NEO_GRB + NEO_KHZ800);
 
 
 bool rcpt = false;
@@ -40,6 +46,9 @@ int puntaje = 0;
 void setup() {
   pinMode(COMM_PIN, OUTPUT);
   Serial.begin(115200);
+
+  pixels.begin();
+  setGreen();
 
 
 
@@ -85,6 +94,7 @@ void loop() {
         lcd.setCursor(0, 1);
         lcd.print("     BIEN !");
         Serial.println("Inicio juego");
+        setYellow();
         estado = 1;
         digitalWrite(COMM_PIN, HIGH);
         anterior = millis();
@@ -95,7 +105,7 @@ void loop() {
       break;
 
     case 1:
-    /*
+      /*
       if (millis() - anterior > 60000) {
         estado = 2;
         Serial.println("Espera puntos");
@@ -116,6 +126,7 @@ void loop() {
 
       if (millis() - anterior > 60000) {
         estado = 2;
+        setRed();
         Serial.println("Espera puntos");
         digitalWrite(COMM_PIN, LOW);
         anterior = millis();
@@ -141,7 +152,7 @@ void loop() {
       delay(6000);
 
       lcd.clear();
-
+      setGreen();
       puntaje = 0;
       estado = 0;
       Serial.println("Fin");
@@ -172,3 +183,28 @@ bool debounce(int pin) {
 
   return buttonState;
 }
+
+void setGreen() {
+  pixels.clear();
+  for (int i = 0; i < NUMPIXELS_TOTEM; i++) {
+    pixels.setPixelColor(i, pixels.Color(0, 20, 0));
+    pixels.show();
+  }
+}
+
+void setRed() {
+  pixels.clear();
+  for (int i = 0; i < NUMPIXELS_TOTEM; i++) {
+    pixels.setPixelColor(i, pixels.Color(20, 0, 0));
+    pixels.show();
+  }
+}
+
+void setYellow() {
+  pixels.clear();
+  for (int i = 0; i < NUMPIXELS_TOTEM; i++) {
+    pixels.setPixelColor(i, pixels.Color(20, 20, 0));
+    pixels.show();
+  }
+}
+
