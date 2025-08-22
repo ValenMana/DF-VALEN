@@ -5,7 +5,7 @@
 #include <Adafruit_NeoPixel.h>
 
 #define PIN_TOTEM 14
-#define NUMPIXELS_TOTEM 8
+#define NUMPIXELS_TOTEM 2
 
 Adafruit_NeoPixel pixels(NUMPIXELS_TOTEM, PIN_TOTEM, NEO_GRB + NEO_KHZ800);
 
@@ -79,6 +79,7 @@ void setup() {
 
 void loop() {
 
+
   switch (estado) {
     case 0:
       lcd.setCursor(4, 0);
@@ -105,13 +106,7 @@ void loop() {
       break;
 
     case 1:
-      /*
-      if (millis() - anterior > 60000) {
-        estado = 2;
-        Serial.println("Espera puntos");
-        digitalWrite(COMM_PIN, LOW);
-        anterior = millis();
-      }*/
+     
       state = debounce(DATA_PIN);
 
       // Detectar flanco de subida (LOW -> HIGH)
@@ -159,6 +154,8 @@ void loop() {
 
       break;
   }
+
+  //setYellow();
 }
 bool debounce(int pin) {
   const unsigned long debounceDelay = 50;  // Tiempo de rebote en ms
