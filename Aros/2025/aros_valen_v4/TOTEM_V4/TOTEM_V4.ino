@@ -5,7 +5,7 @@
 #include <Adafruit_NeoPixel.h>
 
 #define PIN_TOTEM 14
-#define NUMPIXELS_TOTEM 7
+#define NUMPIXELS_TOTEM 8
 
 Adafruit_NeoPixel pixels(NUMPIXELS_TOTEM, PIN_TOTEM, NEO_GRB + NEO_KHZ800);
 
@@ -187,7 +187,7 @@ bool debounce(int pin) {
 void setGreen() {
   pixels.clear();
   for (int i = 0; i < NUMPIXELS_TOTEM; i++) {
-    pixels.setPixelColor(i, pixels.Color(0, 20, 0));
+    pixels.setPixelColor(i, pixels.Color(0, 150, 0));
     pixels.show();
   }
 }
@@ -195,7 +195,7 @@ void setGreen() {
 void setRed() {
   pixels.clear();
   for (int i = 0; i < NUMPIXELS_TOTEM; i++) {
-    pixels.setPixelColor(i, pixels.Color(20, 0, 0));
+    pixels.setPixelColor(i, pixels.Color(150, 0, 0));
     pixels.show();
   }
 }
@@ -203,7 +203,7 @@ void setRed() {
 void setYellow() {
   pixels.clear();
   for (int i = 0; i < NUMPIXELS_TOTEM; i++) {
-    pixels.setPixelColor(i, pixels.Color(20, 20, 0));
+    pixels.setPixelColor(i, pixels.Color(150, 150, 0));
     pixels.show();
   }
 }

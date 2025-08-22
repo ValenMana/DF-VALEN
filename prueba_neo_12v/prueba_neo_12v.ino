@@ -1,11 +1,11 @@
 #include <FastLED.h>
 
 // Configuración básica
-#define NUM_LEDS 29
-#define DATA_PIN 25
-#define LED_TYPE WS2811       // O WS2812, según tus LEDs
+#define NUM_LEDS 8
+#define DATA_PIN 3
+#define LED_TYPE WS2812       // O WS2812, según tus LEDs
 #define COLOR_ORDER GRB       // Ajusta si los colores no son correctos
-#define BRIGHTNESS 100        // Ajustá entre 0-255 según lo que necesites
+#define BRIGHTNESS 255        // Ajustá entre 0-255 según lo que necesites
 
 // Declaración de arreglos de LEDs
 CRGB leds[NUM_LEDS];
