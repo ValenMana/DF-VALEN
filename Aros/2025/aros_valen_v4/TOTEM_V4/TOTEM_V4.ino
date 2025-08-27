@@ -143,7 +143,7 @@ void loop() {
       lcd.setCursor(1, 0);
       lcd.print("Puntos ganados");
       lcd.setCursor(7, 1);
-      lcd.print(puntaje - 1);
+      lcd.print(puntaje);
       delay(6000);
 
       lcd.clear();
@@ -158,10 +158,10 @@ void loop() {
   //setYellow();
 }
 bool debounce(int pin) {
-  const unsigned long debounceDelay = 50;  // Tiempo de rebote en ms
+  const unsigned long debounceDelay = 125;  // Tiempo de rebote en ms
 
-  static int lastButtonState = LOW;
-  static int buttonState = LOW;
+  static int lastButtonState = HIGH;
+  static int buttonState = HIGH;
   static unsigned long lastDebounceTime = 0;
 
   int reading = digitalRead(pin);

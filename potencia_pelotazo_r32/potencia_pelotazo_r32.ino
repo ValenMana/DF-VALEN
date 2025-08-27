@@ -125,6 +125,8 @@ void loop() {
         lcd.setCursor(0, 1);
         lcd.print("     FUERTE !");
         setYellow();
+        detect();
+        data = -1;
         estado = 1;
       }
       break;
@@ -179,12 +181,15 @@ void loop() {
       lcd.clear();
       prom = 0;
       estado = 0;
+      data = -1;
       setGreen();
+      //ESP.restart();
 
 
 
       break;
   }
+  delay(100);
   //detect();
 }
 
@@ -193,7 +198,7 @@ int detect() {
   int cantidadLeds = 0;
   int val;
 
-  if (pico > 0) {
+  if (pico > 2.3) {
     Serial.print("Impacto detectado: ");
     Serial.print(pico);
     Serial.println(" g");
