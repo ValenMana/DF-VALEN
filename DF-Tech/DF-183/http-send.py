@@ -3,29 +3,33 @@ from datetime import datetime
 import json
 import sys
 import os
+import wifi
 
+# Compatibilidad con PyInstaller
+def resource_path(relative_path):
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
 
-ejecutado = False
+# Reintento de conexión
 while True:
     try:
         request = requests.get("http://www.google.com", timeout=5)
     except (requests.ConnectionError, requests.Timeout):
         print("Sin conexión a internet.")
-        print("Ejecutando script para reconectar...")
-        os.system('python "Wi-Fi-connect/wifi.py"')      
-        print("Reintentando conexión...")
+        print("Ejecutando reconexión Wi-Fi...")
+        wifi.conectar_wifi()  # Asume que wifi.py tiene esta función
     else:
         print("Con conexión a internet.")
         break
 
-with open("config.json", "r") as archivo:
+# Leer config
+with open(resource_path("config.json"), "r") as archivo:
     config = json.load(archivo)
 
 game_id = config["game_id"]
 url = config["endpoint_url"]
 
-
-
+# Clase de juego
 class Jugada:
     def __init__(self, juego, player_id, puntaje):
         self.juego = juego
@@ -41,29 +45,25 @@ class Jugada:
             "score": self.puntaje
         }
 
+# Validar argumentos
 if len(sys.argv) == 3:
-    
-    Jugada.player_id = sys.argv[1]
-    Jugada.puntaje = sys.argv[2]
-    
-    # Imprimir los valores recibidos
-    print(f"ID del Jugador: {Jugada.player_id}")
-    print(f"Puntaje: {Jugada.puntaje}")
+    player_id = sys.argv[1]
+    puntaje = int(sys.argv[2])
+else:
+    print("Uso: python http-test.py <player_id> <puntaje>")
+    sys.exit(1)
 
+# Crear jugada
+game = Jugada(game_id, player_id, puntaje)
 
-game = Jugada(game_id, Jugada.player_id, Jugada.puntaje)
-
-
+# Enviar a endpoint
 response = requests.post(url, json=game.to_dict())
 
-
+# Mostrar resultado
 if "application/json" in response.headers.get("Content-Type", ""):
     json_recibido = response.json()
-    
-    print("\n Código HTTP:", response.status_code) 
-    print("\n Datos recibidos del endpoint:")
-    print(json.dumps(json_recibido["json"], indent=4))  
-    
+    print("\nCódigo HTTP:", response.status_code)
+    print("\nDatos recibidos del endpoint:")
+    print(json.dumps(json_recibido["json"], indent=4))
 else:
     print(f"\nERROR (Código {response.status_code})")
-
