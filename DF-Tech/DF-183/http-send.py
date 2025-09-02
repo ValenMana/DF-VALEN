@@ -1,6 +1,22 @@
 import requests
 from datetime import datetime
 import json
+import sys
+import os
+
+
+ejecutado = False
+while True:
+    try:
+        request = requests.get("http://www.google.com", timeout=5)
+    except (requests.ConnectionError, requests.Timeout):
+        print("Sin conexión a internet.")
+        print("Ejecutando script para reconectar...")
+        os.system('python "Wi-Fi-connect/wifi.py"')      
+        print("Reintentando conexión...")
+    else:
+        print("Con conexión a internet.")
+        break
 
 with open("config.json", "r") as archivo:
     config = json.load(archivo)
@@ -25,9 +41,17 @@ class Jugada:
             "score": self.puntaje
         }
 
-Jugada.puntaje = 21
+if len(sys.argv) == 3:
+    
+    Jugada.player_id = sys.argv[1]
+    Jugada.puntaje = sys.argv[2]
+    
+    # Imprimir los valores recibidos
+    print(f"ID del Jugador: {Jugada.player_id}")
+    print(f"Puntaje: {Jugada.puntaje}")
 
-game = Jugada(game_id, "5qw4251xs", Jugada.puntaje)
+
+game = Jugada(game_id, Jugada.player_id, Jugada.puntaje)
 
 
 response = requests.post(url, json=game.to_dict())
