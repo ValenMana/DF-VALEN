@@ -2,6 +2,8 @@ import subprocess
 import json
 import os
 import sys
+import requests
+import socket
 
 def resource_path(relative_path):
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
@@ -25,5 +27,28 @@ def conectar_wifi():
         )
         if result.returncode == 0:
             print(f"Conectado a {ssid}")
+            ip_local = socket.gethostbyname(socket.gethostname())
+
+            print("IP local:", ip_local)
             return
     print("No se pudo conectar a ninguna red.")
+
+def verificar_conexion():
+    try:
+        request = requests.get("http://www.google.com", timeout=5)
+        print("Con conexión a internet.")
+        ip_local = socket.gethostbyname(socket.gethostname())
+
+        print("IP local:", ip_local)
+
+        return True
+    except (requests.ConnectionError, requests.Timeout):
+        print("Sin conexión a internet.")
+        print("Ejecutando reconexión Wi-Fi...")
+        return False
+
+if __name__ == "__main__":
+    if verificar_conexion():
+        print("Ya estás conectado.")
+    else:
+        conectar_wifi()

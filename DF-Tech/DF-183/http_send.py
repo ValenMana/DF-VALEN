@@ -6,20 +6,12 @@ import json
 import sys
 import os
 
+
+
 def resource_path(relative_path):
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
 
-def verificar_conexion():
-    try:
-        request = requests.get("http://www.google.com", timeout=5)
-        print("Con conexión a internet.")
-        return True
-    except (requests.ConnectionError, requests.Timeout):
-        print("Sin conexión a internet.")
-        print("Ejecutando reconexión Wi-Fi...")
-        #wifi.conectar_wifi()
-        return False
 
 def cargar_config():
     with open(resource_path("config.json"), "r") as archivo:
@@ -57,5 +49,12 @@ def enviar_jugada(player_id, puntaje):
     else:
         print(f"\nERROR (Código {response.status_code})")
 
-# Solo se ejecuta si corres este script directamente (no si lo importas)
+if __name__ == "__main__":
+    if len(sys.argv) == 3:
+        player_id = sys.argv[1]
+        puntaje = int(sys.argv[2])
+        enviar_jugada(player_id, puntaje)
+    else:
+        print("Uso: python http_test.py <player_id> <puntaje>")
+        sys.exit(1)
 
