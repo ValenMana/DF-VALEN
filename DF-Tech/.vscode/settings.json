@@ -1,0 +1,6 @@
+{
+    "python.analysis.extraPaths": [
+        "./DF-183",
+        "./DF-185"
+    ]
+}

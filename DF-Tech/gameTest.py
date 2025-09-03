@@ -1,12 +1,21 @@
-import subprocess
+import sys
+import os
 
-id_jugador = "120dpl3nf032lk"
-puntaje = "27"
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'DF-183')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'DF-185')))
 
-# Fin de la jugada, se envian los datos al servidor
+import http_send
+import wifi
 
-comando = ["python", "DF-183/http-send.py", id_jugador, puntaje]
+conexion = http_send.verificar_conexion()
 
-# Ejecutar el script y capturar su salida
-resultado = subprocess.run(comando, capture_output=True, text=True)
+id = "lfmvmwik232"
+puntaje = 4
+
+if conexion:
+    http_send.cargar_config()
+    http_send.enviar_jugada(id, puntaje)
+
+else:
+    wifi.conectar_wifi()
 
