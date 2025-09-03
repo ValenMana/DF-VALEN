@@ -27,29 +27,19 @@ def conectar_wifi():
         )
         if result.returncode == 0:
             print(f"Conectado a {ssid}")
-            print("IP local:", obtener_ip_local())
+            ip_local = socket.gethostbyname(socket.gethostname())
+
+            print("IP local:", ip_local)
             return
     print("No se pudo conectar a ninguna red.")
-
-def obtener_ip_local():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        s.connect(("8.8.8.8", 80))
-        ip_local = s.getsockname()[0]
-    except Exception as e:
-        ip_local = "No disponible"
-    finally:
-        s.close()
-    return ip_local
-
 
 def verificar_conexion():
     try:
         request = requests.get("http://www.google.com", timeout=5)
         print("Con conexión a internet.")
-        
+        ip_local = socket.gethostbyname(socket.gethostname())
 
-        print("IP local:", obtener_ip_local())
+        print("IP local:", ip_local)
 
         return True
     except (requests.ConnectionError, requests.Timeout):
