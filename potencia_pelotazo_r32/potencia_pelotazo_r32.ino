@@ -47,6 +47,8 @@ MPU6050 mpu(0x68);
 float umbralImpacto = 1.5;  // Ajustá esto para cambiar sensibilidad (en g)
 float baseAccZ = 0;
 
+int anterior;
+
 void setup() {
   Serial.begin(115200);
   Wire.begin(21, 22);  // SDA = GPIO21, SCL = GPIO22 en ESP32
@@ -126,20 +128,25 @@ void loop() {
         lcd.print("     FUERTE !");
         setYellow();
         detect();
+        anterior = millis();
         data = -1;
         estado = 1;
       }
       break;
 
     case 1:
+
       data = detect();
-      if (data != -1) {
+      if (millis() - anterior > 900) {
+        if (data != -1) {
 
-        prom += data;
-        Serial.println(data);
+          prom += data;
+          Serial.println(data);
 
-        estado = 2;
+          estado = 2;
+        }
       }
+
       break;
 
     case 2:
@@ -174,7 +181,7 @@ void loop() {
       lcd.setCursor(0, 1);
       for (int i = 0; i < prom; i++) {
         lcd.write(byte(255));  // 255 = carácter de bloque lleno (█)
-        delay(60);            // Simular animación de carga
+        delay(60);             // Simular animación de carga
       }
 
       delay(6000);
