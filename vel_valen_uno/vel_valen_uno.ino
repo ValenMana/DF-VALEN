@@ -41,7 +41,8 @@ struct tiempos {
 tiempos tiempo;
 
 int reading;
-
+bool gameStarted = false;
+long gameTimer;
 int maxSpeed;
 
 void setup() {
@@ -77,6 +78,10 @@ void setup() {
 
 void loop() {
 
+  if (millis() - gameTimer > 45000 && gameStarted == true) {
+    estado = 5;
+  }
+
   switch (estado) {
     case 0:
       lcd.setCursor(4, 0);
@@ -86,6 +91,8 @@ void loop() {
       if (rfid.PICC_IsNewCardPresent()) {
         Serial.println("Tarjeta detectada.");
         estado = 1;
+        gameStarted = true;
+        gameTimer = millis();
         lcd.clear();
         lcd.setCursor(2, 0);
         lcd.print("A CORRER !!");
@@ -139,22 +146,33 @@ void loop() {
       /*
       Serial.println("El tiempo de ida fue: " + String(tiempo.finish - tiempo.start));
       Serial.println("El tiempo de vuelta fue: " + String(tiempo.finishReturn - tiempo.startReturn));*/
+      gameStarted = false;
       setRed();
 
       double finalTime1 = (tiempo.finish - tiempo.start) / 3600000.0;
       double finalTime2 = (tiempo.finishReturn - tiempo.startReturn) / 3600000.0;
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Tu velocidad fue:");
+
       //lcd.print("1: " + String(0.007 / finalTime1) + " km/h");
       if (0.007 / finalTime1 > 0.007 / finalTime2) {
         maxSpeed = 0.007 / finalTime1;
       } else {
         maxSpeed = 0.007 / finalTime2;
       }
+      if (maxSpeed == 0) {
+        lcd.clear();
+        lcd.setCursor(1, 0);
+        lcd.print("Te quedaste");
+        lcd.setCursor(3, 1);
+        lcd.print("sin tiempo :(");
 
-      lcd.setCursor(5, 1);
-      lcd.print(String(maxSpeed) + " km/h");
+      } else {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Tu velocidad fue:");
+        lcd.setCursor(5, 1);
+        lcd.print(String(maxSpeed) + " km/h");
+      }
+
       Serial.println("La velocidad de ida fue: " + String(0.007 / finalTime1));
       Serial.println("La velocidad de ida fue: " + String(0.007 / finalTime2));
       delay(12000);

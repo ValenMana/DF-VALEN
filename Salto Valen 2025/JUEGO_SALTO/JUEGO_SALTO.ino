@@ -1,41 +1,37 @@
+#include <MFRC522.h>
+#include <MFRC522Extended.h>
+#include <deprecated.h>
+#include <require_cpp11.h>
+
+#include <Wire.h>
+
+#include <LiquidCrystal_I2C.h>
+
 int estado = 0;
 int cuentaPuntos = 0;
 String dat;
+int r, g, b;
 
-const int trigPin = 26;  //Pin digital 2 para el Trigger del sensor
-const int echoPin = 17;
-
-uint8_t r = 100;
-uint8_t g = 60;
-uint8_t b = 30;
-
-int maxHeight = 0;
-
-int altura = 0;
-
-String dataIn;
-#include <SPI.h>
-#include <MFRC522.h>
-#include <Wire.h>
-#include <LiquidCrystal_I2C.h>
+#include <Ultrasonic.h>
 #include <Adafruit_NeoPixel.h>
+#ifdef __AVR__
+#include <avr/power.h>  // Required for 16 MHz Adafruit Trinket
+#endif
 
+#define PIN 4
 
-#define PIN_TOTEM 12       // On Trinket or Gemma, suggest changing this to 1
-#define NUMPIXELS_TOTEM 7  // Popular NeoPixel ring size
+#define OFFSET 5
 
-#define PIN 16
-#define NUM_LEDS 63
+#define NUMPIXELS 183
 
-
-Adafruit_NeoPixel pixels(NUMPIXELS_TOTEM, PIN_TOTEM, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel tiraLed(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+Ultrasonic ultrasonic(3, 2);
 
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 
-#define SS_PIN 13
-#define RST_PIN 5
+#define SS_PIN 10
+#define RST_PIN 9
 
 MFRC522 rfid(SS_PIN, RST_PIN);  // Instance of the class
 
@@ -49,6 +45,10 @@ String cardID = "";
 
 long tiempo;
 
+int maxValue;
+int ledsOn;
+int distance;
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
@@ -59,18 +59,13 @@ void setup() {
   lcd.init();
   pixels.begin();  // INITIALIZE NeoPixel strip object (REQUIRED)
 
-  tiraLed.begin();
-  tiraLed.show();
 
   // Print a message to the LCD.
   lcd.backlight();
   lcd.clear();
-  setGreen();
   Serial.println("Inicio Totem");
 
-  pinMode(trigPin, OUTPUT);    //pin como salida
-  pinMode(echoPin, INPUT);     //pin como entrada
-  digitalWrite(trigPin, LOW);  //Inicializamos el pin con 0
+  //pin como entrada
 }
 
 void loop() {
@@ -90,10 +85,9 @@ void loop() {
         lcd.print("     SALTA");
         lcd.setCursor(0, 1);
         lcd.print("   BIEN ALTO !");
-        setYellow();
         Serial.println("Start");
-        tiraLed.clear();
-        tiraLed.show();
+        pixels.clear();
+        pixels.show();
         tiempo = millis();
         //Serial.println(tiempo);
         estado = 1;
@@ -103,24 +97,13 @@ void loop() {
 
     case 1:
 
-      altura = getUs();
-      Serial.println(maxHeight);
-
-      if (maxHeight < altura) {
-        maxHeight = altura;
-        showHeight(map(altura, 0, 300, 0, NUM_LEDS) - 5);
-      }
+      game();
 
       if (millis() - tiempo > 25000) {
         estado = 3;
         Serial.println("End");
-        setRed();
 
-        for (int i = 0; i < NUM_LEDS; i++) {
-          tiraLed.setPixelColor(i, pixels.Color(255, 0, 0));
-          tiraLed.show();
-          //delay(5);
-        }
+        
       }
 
       break;
@@ -129,17 +112,16 @@ void loop() {
 
       Serial.println("estado 3: " + String(cuentaPuntos));
       //cuentaPuntos = score();
-      lcd.clear();
-      lcd.setCursor(1, 0);
-      lcd.print("Altura Maxima");
-      lcd.setCursor(7, 1);
-      lcd.print(maxHeight);
-      lcd.print(" cm");
-      delay(6000);
-      lcd.clear();
-      maxHeight = 0;
+        lcd.clear();
+        lcd.setCursor(1, 0);
+        lcd.print("Altura Maxima");
+        lcd.setCursor(7, 1);
+        lcd.print(maxValue);
+        lcd.print(" cm");
+        delay(6000);
+        lcd.clear();
+      maxValue = 0;
       estado = 0;
-      setGreen();
       break;
   }
   // put your main code here, to run repeatedly:
@@ -147,31 +129,39 @@ void loop() {
   //Serial.println(Serial.read());
 }
 
-void setGreen() {
-  pixels.clear();                              // Set all pixel colors to 'off'
-  for (int i = 0; i < NUMPIXELS_TOTEM; i++) {  // For each pixel...
-    pixels.setPixelColor(i, pixels.Color(0, 20, 0));
 
-    pixels.show();  // Send the updated pixel colors to the hardware.
+
+void game() {
+
+  // Pass INC as a parameter to get the distance in inches
+  //pixels.clear();
+  distance = ultrasonic.read();
+
+
+  distance = 300 - distance;
+  if (distance < 20) {
+    distance = 0;
+  } else {
+    //distance += 60;
   }
-}
-
-void setRed() {
-  pixels.clear();                              // Set all pixel colors to 'off'
-  for (int i = 0; i < NUMPIXELS_TOTEM; i++) {  // For each pixel...
-    pixels.setPixelColor(i, pixels.Color(20, 0, 0));
-
-    pixels.show();  // Send the updated pixel colors to the hardware.
+  if (distance > maxValue) {
+    maxValue = distance;
+    ledsOn = map(distance, 0, 300, 0, NUMPIXELS);
+    ledsOn -= OFFSET;
+    for (int i = 0; i < ledsOn; i++) {
+      pixels.setPixelColor(i, pixels.Color(0, 150, 0));
+      pixels.show();
+      delayMicroseconds(10);
+    }
+    //pixels.clear();
   }
-}
 
-void setYellow() {
-  pixels.clear();                              // Set all pixel colors to 'off'
-  for (int i = 0; i < NUMPIXELS_TOTEM; i++) {  // For each pixel...
-    pixels.setPixelColor(i, pixels.Color(20, 20, 0));
 
-    pixels.show();  // Send the updated pixel colors to the hardware.
-  }
+
+
+  Serial.println(maxValue);
+  //showHeight(maxValue);
+  delay(100);
 }
 
 void standby() {
@@ -179,24 +169,24 @@ void standby() {
 
 
 
-  for (int i = 1; i < NUM_LEDS; i++) {
+  for (int i = 1; i < NUMPIXELS; i++) {
 
     for (int z = 0; z < 10; z++) {
-      tiraLed.setPixelColor(i + z, pixels.Color(r, g, b));
+      pixels.setPixelColor(i + z, pixels.Color(r, g, b));
     }
-    //tiraLed.setPixelColor(i - 1, 0);
-    tiraLed.show();
+    //pixels.setPixelColor(i - 1, 0);
+    pixels.show();
 
     delay(12);
   }
 
-  for (int i = NUM_LEDS; i > 1; i--) {
+  for (int i = NUMPIXELS; i > 1; i--) {
 
     for (int z = 10; z > 0; z--) {
-      tiraLed.setPixelColor(i - z, pixels.Color(r, g, b));
+      pixels.setPixelColor(i - z, pixels.Color(r, g, b));
     }
-    tiraLed.setPixelColor(i + 1, 0);
-    tiraLed.show();
+    pixels.setPixelColor(i + 1, 0);
+    pixels.show();
 
     delay(12);
   }
@@ -206,41 +196,10 @@ void standby() {
 }
 
 
-long getUs() {
-
-  // defines variables
-  long duration;
-  int distance;
-
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  // Sets the trigPin on HIGH state for 10 micro seconds
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-  // Reads the echoPin, returns the sound wave travel time in microseconds
-  duration = pulseIn(echoPin, HIGH, 15000);
-  // Calculating the distance
-  distance = duration * 0.034 / 2;
-  // Prints the distance on the Serial Monitor
-
-  if (distance < 50) {
-    distance = 0;
-  }else{
-    distance = 300 - distance;
-  }
-
-  return distance;
-
-  delay(60);
-  //delay(500);
-}
-
-
 void showHeight(int cantidadMax) {
   for (int i = 0; i < cantidadMax; i++) {
-    tiraLed.setPixelColor(i, tiraLed.ColorHSV(50 * 256));
-    tiraLed.show();
+    pixels.setPixelColor(i, pixels.ColorHSV(50 * 256));
+    pixels.show();
     delay(25);
   }
 }

@@ -46,7 +46,8 @@ MPU6050 mpu(0x68);
 
 float umbralImpacto = 1.5;  // Ajustá esto para cambiar sensibilidad (en g)
 float baseAccZ = 0;
-
+long gameStarted;
+bool game = false;
 int anterior;
 
 void setup() {
@@ -112,6 +113,11 @@ void loop() {
   //FastLED.show();
   //delay(20);
 
+  if (millis() - gameStarted > 60000 && game == true) {
+    setRed();
+    estado = 4;
+  }
+
   switch (estado) {
     case 0:
       lcd.setCursor(3, 0);
@@ -121,6 +127,8 @@ void loop() {
       stby_led();
       if (rfid.PICC_IsNewCardPresent()) {
         //Serial.println("Tarjeta detectada.");
+        game = true;
+        gameStarted = millis();
         lcd.clear();
         lcd.setCursor(0, 0);
         lcd.print("     PEGALE");
@@ -185,6 +193,7 @@ void loop() {
       }
 
       delay(6000);
+      game = false;
       lcd.clear();
       prom = 0;
       estado = 0;
@@ -205,7 +214,7 @@ int detect() {
   int cantidadLeds = 0;
   int val;
 
-  if (pico > 2.3) {
+  if (pico > 5) {
     Serial.print("Impacto detectado: ");
     Serial.print(pico);
     Serial.println(" g");

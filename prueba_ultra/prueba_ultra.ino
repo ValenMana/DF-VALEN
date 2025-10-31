@@ -1,5 +1,5 @@
-const int Trigger = 26;   //Pin digital 2 para el Trigger del sensor
-const int Echo = 17;   //Pin digital 3 para el Echo del sensor
+const int Trigger = 3;   //Pin digital 2 para el Trigger del sensor
+const int Echo = 2;   //Pin digital 3 para el Echo del sensor
  
 void setup() {
   Serial.begin(9600);//iniciailzamos la comunicación
@@ -21,9 +21,6 @@ void loop()
   t = pulseIn(Echo, HIGH); //obtenemos el ancho del pulso
   d = t/59;             //escalamos el tiempo a una distancia en cm
   
-  Serial.print("Distancia: ");
-  Serial.print(d);      //Enviamos serialmente el valor de la distancia
-  Serial.print("cm");
-  Serial.println();
-  delay(250);          //Hacemos una pausa de 100ms
+  Serial.println(d);      //Enviamos serialmente el valor de la distancia
+          //Hacemos una pausa de 100ms
 }

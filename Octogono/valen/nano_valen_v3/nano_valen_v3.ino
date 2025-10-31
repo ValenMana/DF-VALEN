@@ -30,11 +30,14 @@ bool movement = false;
 
 #define TCA9548A_ADDR 0x70
 
-float MOVEMENT_THRESHOLD[8] = { 4.0, 4.0, 4.0, 4.0, 4.5, 4.0, 4.0, 4.0 };
+float MOVEMENT_THRESHOLD[8] = { 18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0, 18.0 };
 float lastAx[8] = { 0 }, lastAy[8] = { 0 }, lastAz[8] = { 0 };
 
 Adafruit_MPU6050 mpu;
 bool mpu_initialized[8] = { false };
+
+int test = 0;
+
 
 void setup() {
   Serial.begin(9600);
@@ -46,11 +49,29 @@ void setup() {
 }
 
 void loop() {
-  //Serial.println(readMPU6050(3));
-  
-  if(mySerial.available() && estado != 0){
+  //testing();
+  //readMPU6050(2);
+  logic();
+}
+
+void testing() {
+  if (readMPU6050(test)) {
+    stripOff(test);
+    test += 1;
+    delay(1000);
+  }
+  if (test > 7) {
+    test = 0;
+  }
+  setStripColorGreen(test);
+}
+
+void logic() {
+  // Serial.println(readMPU6050(3));
+
+  if (mySerial.available() && estado != 0) {
     dat = mySerial.readString().toInt();
-    if(dat == 3){
+    if (dat == 3) {
       estado = 0;
     }
   }
@@ -80,12 +101,10 @@ void loop() {
 
     case 2:
       if (readMPU6050(randomSelect)) {
-        if (readMPU6050(randomSelect)) {
-          movement = true;
-          score++;
-          mySerial.println(score);
-          estado = 3;
-        }
+        movement = true;
+        score++;
+        mySerial.println(score);
+        estado = 3;
       }
       break;
 
@@ -157,11 +176,22 @@ bool readMPU6050(uint8_t channel) {
   float deltaAy = abs(a.acceleration.y - lastAy[channel]);
   float deltaAz = abs(a.acceleration.z - lastAz[channel]);
 
-  lastAx[channel] = a.acceleration.x;
-  lastAy[channel] = a.acceleration.y;
-  lastAz[channel] = a.acceleration.z;
+  lastAx[channel] = abs(a.acceleration.x);
+  lastAy[channel] = abs(a.acceleration.y);
+  lastAz[channel] = abs(a.acceleration.z);
 
-  return (deltaAx > MOVEMENT_THRESHOLD[channel] || deltaAy > MOVEMENT_THRESHOLD[channel] || deltaAz > MOVEMENT_THRESHOLD[channel]);
+  Serial.println(lastAz[channel]);
+
+  if (lastAz[channel] > MOVEMENT_THRESHOLD[channel]) {
+    Serial.println("Deteccion canal: " + String(channel));
+    delay(50);
+    return 1;
+  } else {
+    return 0;
+  }
+  delay(100);
+
+  //return (deltaAx > MOVEMENT_THRESHOLD[channel] || deltaAy > MOVEMENT_THRESHOLD[channel] || deltaAz > MOVEMENT_THRESHOLD[channel]);
 }
 
 void Setup_neo() {

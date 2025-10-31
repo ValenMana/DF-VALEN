@@ -21,7 +21,7 @@ int state;
 #define NP_PIN_7 35
 
 #define PIXELS_NUM 1
-#define STICK_NUM 7
+#define STICK_NUM 5
 
 Adafruit_NeoPixel pixels[STICK_NUM] = {
   Adafruit_NeoPixel (PIXELS_NUM, NP_PIN_1, NEO_GRB + NEO_KHZ800),
@@ -29,8 +29,6 @@ Adafruit_NeoPixel pixels[STICK_NUM] = {
   Adafruit_NeoPixel (PIXELS_NUM, NP_PIN_3, NEO_GRB + NEO_KHZ800),
   Adafruit_NeoPixel (PIXELS_NUM, NP_PIN_4, NEO_GRB + NEO_KHZ800),
   Adafruit_NeoPixel (PIXELS_NUM, NP_PIN_5, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel (PIXELS_NUM, NP_PIN_6, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel (PIXELS_NUM, NP_PIN_7, NEO_GRB + NEO_KHZ800)
 
 };
 
@@ -45,7 +43,7 @@ Adafruit_NeoPixel pixels[STICK_NUM] = {
 // #define US_PIN_7 34
 
 #define MAX_DISTANCE 200
-#define SONAR_NUM 6
+#define SONAR_NUM 5
 
 unsigned int measures[SONAR_NUM];
 
@@ -55,7 +53,7 @@ NewPing sonar[SONAR_NUM] = {        // AGREGAR
   NewPing(US_PIN_3, US_PIN_3, MAX_DISTANCE),
   NewPing(US_PIN_4, US_PIN_4, MAX_DISTANCE),
   NewPing(US_PIN_5, US_PIN_5, MAX_DISTANCE),
-  NewPing(US_PIN_6, US_PIN_6, MAX_DISTANCE)
+  //NewPing(US_PIN_6, US_PIN_6, MAX_DISTANCE)
   // NewPing(US_PIN_7, US_PIN_7, MAX_DISTANCE)
 };
 
@@ -106,7 +104,7 @@ void game() {
       count = 0;
       current = -1;
       last = -2;
-      
+      stby_neo();
       if (Serial.available() > 0) {
         if (Serial.readString().toInt() == -1) {
           state = START_GAME;
@@ -243,4 +241,39 @@ void timer_interrupt() {
 
   }
   timer_3 ++;
+}
+
+void stby_neo() {
+  static uint8_t hue = 0;
+  static uint8_t fade = 0;
+  static bool fadingIn = true;
+  static unsigned long lastUpdate = 0;
+
+  const unsigned long intervalo = 4;  // Velocidad de cambio (más alto = más lento)
+
+  if (millis() - lastUpdate >= intervalo) {
+    lastUpdate = millis();
+
+    for (int i = 0; i < 6; i++) {
+      uint8_t pixelHue = hue + i * 30;
+      uint32_t color = pixels[i].ColorHSV(pixelHue * 256, 255, fade);
+      pixels[i].setPixelColor(0, color);
+      pixels[i].show();
+    }
+
+    if (fadingIn) {
+      if (fade < 255) {
+        fade++;
+      } else {
+        fadingIn = false;
+      }
+    } else {
+      if (fade > 0) {
+        fade--;
+      } else {
+        fadingIn = true;
+        hue++;  // Cambiar de color cuando se apaga del todo
+      }
+    }
+  }
 }

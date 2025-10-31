@@ -112,6 +112,7 @@ void game() {
       current = -1;
       last = -2;
       stby_neo();
+      //state = START_GAME;
 
       if (Serial.available() > 0) {
         if (Serial.readString().toInt() == -1) {
@@ -173,7 +174,7 @@ void game() {
       main_game();
       update_sensors();
       update_neopixels();
-      // print_sensors();
+      print_sensors();
       if (timer_3 >= 40000) {
         state = END_GAME;
       }
