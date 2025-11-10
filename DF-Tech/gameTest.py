@@ -17,4 +17,5 @@ if conexion:
 
 else:
     wifi.conectar_wifi()
+    http_send.enviar_jugada(id, puntaje)
 
