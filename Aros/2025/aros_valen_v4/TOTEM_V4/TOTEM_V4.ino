@@ -5,7 +5,7 @@
 #include <Adafruit_NeoPixel.h>
 
 #define PIN_TOTEM 14
-#define NUMPIXELS_TOTEM 2
+#define NUMPIXELS_TOTEM 8
 
 Adafruit_NeoPixel pixels(NUMPIXELS_TOTEM, PIN_TOTEM, NEO_GRB + NEO_KHZ800);
 
@@ -143,14 +143,9 @@ void loop() {
       lcd.setCursor(1, 0);
       lcd.print("Puntos ganados");
       lcd.setCursor(7, 1);
-      lcd.print(puntaje);
+      lcd.print(puntaje - 1);
       delay(6000);
-
-      lcd.clear();
-      setGreen();
-      puntaje = 0;
-      estado = 0;
-      Serial.println("Fin");
+      ESP.restart();
 
       break;
   }
@@ -184,7 +179,7 @@ bool debounce(int pin) {
 void setGreen() {
   pixels.clear();
   for (int i = 0; i < NUMPIXELS_TOTEM; i++) {
-    pixels.setPixelColor(i, pixels.Color(0, 150, 0));
+    pixels.setPixelColor(i, pixels.Color(0, 255, 0));
     pixels.show();
   }
 }
@@ -192,7 +187,7 @@ void setGreen() {
 void setRed() {
   pixels.clear();
   for (int i = 0; i < NUMPIXELS_TOTEM; i++) {
-    pixels.setPixelColor(i, pixels.Color(150, 0, 0));
+    pixels.setPixelColor(i, pixels.Color(255, 0, 0));
     pixels.show();
   }
 }
@@ -200,7 +195,7 @@ void setRed() {
 void setYellow() {
   pixels.clear();
   for (int i = 0; i < NUMPIXELS_TOTEM; i++) {
-    pixels.setPixelColor(i, pixels.Color(150, 150, 0));
+    pixels.setPixelColor(i, pixels.Color(255, 255, 0));
     pixels.show();
   }
 }

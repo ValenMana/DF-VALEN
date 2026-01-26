@@ -96,11 +96,12 @@ void loop() {
       lcd.setCursor(7, 1);
       lcd.print(cuentaPuntos);
       delay(6000);
-
+      /*
       lcd.clear();
       cuentaPuntos = 0;
       estado = 0;
-      setGreen();
+      setGreen();*/
+      ESP.restart();
       break;
   }
 }

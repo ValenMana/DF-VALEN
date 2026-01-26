@@ -28,7 +28,7 @@ const int Echo = 2;
 #define OFFSET 5
 
 #define NUMPIXELS 183
-#define NUMPIXELS_TOTEM 7
+#define NUMPIXELS_TOTEM 8
 
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel totem(NUMPIXELS_TOTEM, PIN_TOTEM, NEO_GRB + NEO_KHZ800);
@@ -42,6 +42,9 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);  // set the LCD address to 0x27 for a 16 cha
 void setup() {
   Serial.begin(9600);
   pixels.begin();
+  totem.begin();
+  totem.clear();
+  totem.show();
   pixels.clear();
   pixels.show();
   SPI.begin();      // Init SPI bus
@@ -69,8 +72,7 @@ int state = 0;
 long timerGame;
 bool detected = false;
 void loop() {
-  //game();
-
+  
   switch (state) {
     case 0:
       stby_led();
@@ -116,7 +118,7 @@ void loop() {
         timerGame = millis();
         state = 2;
       }
-      if(millis() - timerGame > 30000){
+      if (millis() - timerGame > 30000) {
         state = 2;
       }
       delay(100);
@@ -206,7 +208,7 @@ void stby_led() {
 void setGreen() {
   totem.clear();
   for (int i = 0; i < NUMPIXELS_TOTEM; i++) {
-    totem.setPixelColor(i, totem.Color(0, 20, 0));
+    totem.setPixelColor(i, totem.Color(0, 255, 0));
     totem.show();
   }
 }
@@ -214,7 +216,7 @@ void setGreen() {
 void setRed() {
   totem.clear();
   for (int i = 0; i < NUMPIXELS_TOTEM; i++) {
-    totem.setPixelColor(i, totem.Color(20, 0, 0));
+    totem.setPixelColor(i, totem.Color(255, 0, 0));
     totem.show();
   }
 }
@@ -222,7 +224,7 @@ void setRed() {
 void setYellow() {
   totem.clear();
   for (int i = 0; i < NUMPIXELS_TOTEM; i++) {
-    totem.setPixelColor(i, totem.Color(20, 20, 0));
+    totem.setPixelColor(i, totem.Color(255, 255, 0));
     totem.show();
   }
 }

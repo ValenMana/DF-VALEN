@@ -12,8 +12,9 @@
 #define LED_PIN_TOTEM 26
 
 
-LiquidCrystal_I2C lcd(0x27, 16, 2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
+LiquidCrystal_I2C lcd(0x27, 16, 2);  
 
+/*
 byte bloqueLleno[8] = {
   B11111,
   B11111,
@@ -23,19 +24,17 @@ byte bloqueLleno[8] = {
   B11111,
   B11111,
   B11111
-};
+};*/
 
 #define SS_PIN 5
 #define RST_PIN 13
 
-MFRC522 rfid(SS_PIN, RST_PIN);  // Instance of the class
+MFRC522 rfid(SS_PIN, RST_PIN);  
 
 MFRC522::MIFARE_Key key;
 
-// Init array that will store new NUID
 byte nuidPICC[4];
 
-// Variable to store the scanned card ID as a string
 String cardID = "";
 
 CRGB leds[NUM_LEDS];
@@ -61,7 +60,7 @@ void setup() {
   rfid.PCD_Init();  // Init
   lcd.init();
 
-  lcd.createChar(0, bloqueLleno);
+  //lcd.createChar(0, bloqueLleno);
 
   for (int row = 0; row < 2; row++) {
     lcd.setCursor(5, row);  // columna 5, fila 0 y 1
