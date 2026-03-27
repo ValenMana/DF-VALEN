@@ -77,7 +77,7 @@ unsigned int measures[SONAR_NUM];
 unsigned int flags[SONAR_NUM];
 
 const bool enabled[12] = {
-  1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0
+  1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0
 };
 int randomNum;
 

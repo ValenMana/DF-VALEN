@@ -134,12 +134,12 @@ void neo_stby() {
 }
 
 void setStripColorGreen(int stripIndex) {
-  fill_solid(leds, NUM_LEDS, CRGB::Pink);
+  fill_solid(leds, NUM_LEDS, CRGB::Blue);
   controllers[stripIndex]->showLeds(30);
 }
 
 void setStripColorBlue(int stripIndex) {
-  fill_solid(leds, NUM_LEDS, CRGB::Blue);
+  fill_solid(leds, NUM_LEDS, CRGB::Green);
   controllers[stripIndex]->showLeds(30);
 }
 
