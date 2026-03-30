@@ -4,6 +4,7 @@
 #include <FastLED.h>
 #include <AlmostRandom.h>
 #include <SoftwareSerial.h>
+#include "paneles.hpp"
 
 SoftwareSerial mySerial(A2, A3);  // RX en A2, TX en A3
 AlmostRandom ar;
@@ -35,7 +36,7 @@ float lastAx[8] = { 0 }, lastAy[8] = { 0 }, lastAz[8] = { 0 };
 
 Adafruit_MPU6050 mpu;
 bool mpu_initialized[8] = { false };
-
+const bool panelHabilitado[8] = {PANEL_1, PANEL_2, PANEL_3, PANEL_4, PANEL_5, PANEL_6, PANEL_7, PANEL_8 };
 int test = 0;
 
 
@@ -91,7 +92,7 @@ void logic() {
 
     case 1:
       randomSelect = ar.getRandomByte() % 8;
-      if (randomSelect != randomSelectAnterior && randomSelect != 3) {
+      if (randomSelect != randomSelectAnterior && panelHabilitado[randomSelect]) {
         setStripColorGreen(randomSelect);
         estado = 2;
       }
